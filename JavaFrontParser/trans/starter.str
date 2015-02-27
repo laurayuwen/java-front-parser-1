@@ -81,48 +81,49 @@ rules
 		x -> $[[rez]]
 		where rez := <to-kast> x
 
-	to-kast:
-		x -> $[# "[<escape> x]"(.KList)]
+	to-kast: // string
+		x -> $[#token("\"[<escape> x]\"", "#String")]
 		where <is-string> x
 
-	to-kast:
-		x -> $[# [x](.KList)]
+	to-kast: // ints
+		x -> $[#token("[x]", "#Int")]
 		where <is-int> x
-	
-	// match on a list of some sort
-	to-kast:
-		a#(b) -> $[[<to-kast-userlist(|a)> b]]
-		where <string-ends-with(|"List")> a
 
-	// print the elements of the list
-	to-kast-userlist(|tag):
-		[hd, tl] -> $['[tag]([<to-kast> hd],, [<to-kast-userlist(|tag)> tl])]
-	to-kast-userlist(|tag):
-		[] -> $['.List{"'[tag]"}(.KList)]
-
-	to-kast:
-		a#(b) -> $['[a](
-				     [<to-kast-list> b]
-				   ) ]
-		where not(<string-starts-with(|"\"")> a)
+	to-kast: // normal production
+		a#(b) -> $[`'[a]`([<to-kast-list> b])]
 		where not(!a => [])
+		where not(<string-starts-with(|"\"")> a)
+		where not(<string-ends-with(|"List")> a)
 		//where <debug(!"Term1: ")> (a, b)
 
-	to-kast:
-		a#(b) -> $[[<to-kast-list> b]]
-
-	to-kast-list:
-		[hd | tl] -> $[[<to-kast> hd],,
+	to-kast-list: // continue with children of normal productions head
+		[hd | tl] -> $[[<to-kast> hd],
 		               [[<to-kast-list> tl]]]
 		where not(!tl => [])
 
-	to-kast-list:
+	to-kast-list: // continue with children of normal productions tail
 		[hd | tl] -> $[[<to-kast> hd]]
 		where !tl => []
 
-	to-kast-list:
-		[] -> $[.KList]
-		
+	to-kast-list: // continue with children of normal productions empty
+		[] -> $[.::KList]
+
+
+	// match on a list of some sort
+	to-kast:
+		a#([b]) -> $[[<to-kast-userlist(|a)> b]]
+		where <string-ends-with(|"List")> a
+		//where <debug(!"firstList: ")> (a#([b]), a, b)
+
+	// print the elements of the list
+	to-kast-userlist(|tag):
+		[hd | tl] -> $[`'[tag]`([<to-kast> hd],
+					            [<to-kast-userlist(|tag)> tl])]
+		//where debug(!"head: ")
+	to-kast-userlist(|tag):
+		[] -> $[`'.List{"'[tag]"}`(.::KList)]
+		//where debug(!"terminator: ")
+
 
 	// lang -jar strategoxt.jar -i starter.str -o Ocl -la stratego-sglr --lib -I .. -p oclParser.lib --clean
 	// lang -jar strategoxt.jar -i starter.str -o langParser -la stratego-sglr -I .. -m safecallcmd1 -p ro.uaic.info.fmse.parser
