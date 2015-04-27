@@ -56,9 +56,11 @@ exports
   context-free syntax
     "switch" "(" Expr ")" SwitchBlock -> Stm {cons("Switch")}
     "{" SwitchGroupList SwitchLabelList "}" -> SwitchBlock {cons("SwitchBlock")}
-    SwitchLabelList BlockStmList -> SwitchGroup  {cons("SwitchGroup")}
+    SwitchLabelPlusList BlockStmPlusList -> SwitchGroup  {cons("SwitchGroup")}
     SwitchGroup* -> SwitchGroupList {cons("SwitchGroupList")}
     SwitchLabel* -> SwitchLabelList {cons("SwitchLabelList")}
+    SwitchLabel+ -> SwitchLabelPlusList {cons("SwitchLabelList")}
+    BlockStm+ -> BlockStmPlusList {cons("BlockStmList")}
 
     "case" Expr ":" -> SwitchLabel {cons("Case")}
     "default"   ":" -> SwitchLabel {cons("Default")}
